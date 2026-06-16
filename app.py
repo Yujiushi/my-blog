@@ -119,7 +119,7 @@ def get_notes_summary():
             "emoji": cat.get("emoji", "📁"),
             "desc": cat.get("desc", ""),
             "count": count,
-            "browse_url": f"/browse?c={key}",
+            "browse_url": url_path('/browse.html') + f'?c={key}',
         })
 
     return {
@@ -199,6 +199,29 @@ def check_edit_permission():
         return jsonify({'error': error}), 403
     return None
 
+def get_site_base():
+    if not config:
+        return ''
+    return config.get('site_base', '').rstrip('/')
+
+def url_path(path):
+    """为 GitHub Pages 子路径部署拼接 URL 前缀，如 /my-blog。"""
+    if not path:
+        return get_site_base() + '/' if get_site_base() else '/'
+    if path.startswith('http://') or path.startswith('https://'):
+        return path
+    base = get_site_base()
+    if not path.startswith('/'):
+        path = '/' + path
+    return base + path if base else path
+
+@app.context_processor
+def inject_url_helpers():
+    return {
+        'site_base': get_site_base(),
+        'url_path': url_path,
+    }
+
 def get_avatar_url():
     avatar = config.get('avatar', '')
     if avatar:
@@ -207,12 +230,12 @@ def get_avatar_url():
         if avatar.startswith('/'):
             rel = avatar.lstrip('/').replace('/', os.sep)
             if os.path.exists(os.path.join(os.getcwd(), rel)):
-                return avatar
+                return url_path(avatar)
     os.makedirs(AVATAR_DIR, exist_ok=True)
     for name in ['avatar.jpg', 'avatar.jpeg', 'avatar.png', 'avatar.webp', 'avatar.gif', 'default.svg']:
         if os.path.exists(os.path.join(AVATAR_DIR, name)):
-            return f'/static/avatars/{name}'
-    return '/static/avatars/default.svg'
+            return url_path(f'/static/avatars/{name}')
+    return url_path('/static/avatars/default.svg')
 
 def get_background_info():
     """返回背景图是否存在及用于模板的 URL 路径。"""
@@ -224,20 +247,20 @@ def get_background_info():
         if image.startswith('/'):
             rel = image.lstrip('/').replace('/', os.sep)
             if os.path.exists(os.path.join(os.getcwd(), rel)):
-                return {'exists': True, 'path': image}
+                return {'exists': True, 'path': url_path(image)}
 
     for legacy in ('background.jpg', 'background.png'):
         root_path = os.path.join(os.getcwd(), legacy)
         if os.path.exists(root_path):
-            return {'exists': True, 'path': legacy}
+            return {'exists': True, 'path': url_path(legacy)}
         static_path = os.path.join(os.getcwd(), 'static', legacy)
         if os.path.exists(static_path):
-            return {'exists': True, 'path': f'/static/{legacy}'}
+            return {'exists': True, 'path': url_path(f'/static/{legacy}')}
 
     os.makedirs(BACKGROUND_DIR, exist_ok=True)
     for name in ('background.jpg', 'background.jpeg', 'background.png', 'background.webp', 'background.gif'):
         if os.path.exists(os.path.join(BACKGROUND_DIR, name)):
-            return {'exists': True, 'path': f'/static/backgrounds/{name}'}
+            return {'exists': True, 'path': url_path(f'/static/backgrounds/{name}')}
 
     return {'exists': False, 'path': ''}
 
@@ -913,6 +936,7 @@ def index():
                           })
 
 @app.route('/browse')
+@app.route('/browse.html')
 def browse_notes():
     bg = get_background_info()
     notes_cfg = config.get('notes', {})

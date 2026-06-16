@@ -38,7 +38,11 @@
       escapeHtml(opts.title) +
       " · " +
       escapeHtml(opts.categoryLabel) +
-      '</title>\n  <link rel="stylesheet" href="/static/notes/notes.css">\n</head>\n<body class="note-page">\n  <header class="site-header">\n    <div class="header-inner">\n      <a class="site-title" href="/">📚 我的笔记</a>\n    </div>\n  </header>\n\n  <main class="page-narrow">\n    <nav class="breadcrumb breadcrumb--note" aria-label="路径">' +
+      '</title>\n  <link rel="stylesheet" href="' +
+      siteUrl("/static/notes/notes.css") +
+      '">\n</head>\n<body class="note-page">\n  <header class="site-header">\n    <div class="header-inner">\n      <a class="site-title" href="' +
+      siteUrl("/") +
+      '">📚 我的笔记</a>\n    </div>\n  </header>\n\n  <main class="page-narrow">\n    <nav class="breadcrumb breadcrumb--note" aria-label="路径">' +
       breadcrumbHtml +
       '</nav>\n    <header class="note-header">\n      <h1>' +
       escapeHtml(opts.title) +

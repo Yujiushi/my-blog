@@ -61,11 +61,11 @@
   }
 
   function pageHref(categoryId, folderPath, slug) {
-    return "/" + pageRepoPath(categoryId, folderPath, slug);
+    return siteUrl("/" + pageRepoPath(categoryId, folderPath, slug));
   }
 
   function browseHref(categoryId, folderPath) {
-    let url = "/browse?c=" + encodeURIComponent(categoryId);
+    let url = siteUrl("/browse.html") + "?c=" + encodeURIComponent(categoryId);
     if (folderPath) url += "&p=" + encodeURIComponent(folderPath);
     return url;
   }
@@ -174,7 +174,7 @@
   }
 
   async function load() {
-    const res = await fetch("notes.json?_=" + Date.now());
+    const res = await fetch(siteUrl("/notes.json") + "?_=" + Date.now());
     if (!res.ok) throw new Error("无法加载 notes.json");
     return res.json();
   }
@@ -184,7 +184,7 @@
   }
 
   function getBreadcrumb(manifest, categoryId, folderPath) {
-    const crumbs = [{ label: "首页", href: "/" }];
+    const crumbs = [{ label: "首页", href: siteUrl("/") }];
     const category = getCategory(manifest, categoryId);
     if (!category) return crumbs;
 

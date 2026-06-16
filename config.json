@@ -1,5 +1,6 @@
 {
   "github_url": "https://github.com/Yujiushi",
+  "site_base": "/my-blog",
   "dark_mode": "auto",
   "name": "wowo",
   "bio": "热爱生活与学习的笔记收藏者 · 记录点滴，方便随时回顾",
@@ -64,7 +65,7 @@
   },
   "notes": {
     "github_owner": "Yujiushi",
-    "github_repo": "my-note-website",
+    "github_repo": "my-blog",
     "github_branch": "main"
   }
 }

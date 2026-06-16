@@ -6,7 +6,7 @@
   <title>笔记浏览 · wowo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/notes/notes.css">
+  <link rel="stylesheet" href="/my-blog/static/notes/notes.css">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -25,7 +25,7 @@
     .bg-image {
       position: absolute; inset: 0;
       
-      background-image: url('background.jpg');
+      background-image: url('/my-blog/background.jpg');
       
       background-size: cover; background-position: center;
       filter: blur(4px); transform: scale(1.08);
@@ -45,20 +45,22 @@
     }
   </style>
   <script>
-    window.NOTES_REPO_CONFIG = {"branch": "main", "owner": "Yujiushi", "repo": "my-note-website"};
+    window.SITE_BASE = "/my-blog";
+    window.NOTES_REPO_CONFIG = {"branch": "main", "owner": "Yujiushi", "repo": "my-blog"};
   </script>
-  <script src="/static/notes/manifest.js" defer></script>
-  <script src="/static/notes/markdown.js" defer></script>
-  <script src="/static/notes/note-builder.js" defer></script>
-  <script src="/static/notes/github-client.js" defer></script>
-  <script src="/static/notes/browse.js" defer></script>
+  <script src="/my-blog/static/notes/site-path.js"></script>
+  <script src="/my-blog/static/notes/manifest.js" defer></script>
+  <script src="/my-blog/static/notes/markdown.js" defer></script>
+  <script src="/my-blog/static/notes/note-builder.js" defer></script>
+  <script src="/my-blog/static/notes/github-client.js" defer></script>
+  <script src="/my-blog/static/notes/browse.js" defer></script>
 </head>
 <body class="text-gray-800 dark:text-gray-200 min-h-screen">
   <div class="bg-container"><div class="bg-image"></div><div class="bg-overlay"></div></div>
 
   <nav class="fixed w-full top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center max-w-4xl">
-      <a href="/" class="font-bold text-lg flex items-center gap-2 hover:text-primary dark:hover:text-primary-dark">
+      <a href="/my-blog/" class="font-bold text-lg flex items-center gap-2 hover:text-primary dark:hover:text-primary-dark">
         <i class="fa-solid fa-arrow-left text-sm"></i> 返回主页
       </a>
       <div class="flex items-center gap-2">
@@ -217,7 +219,7 @@
         formData.append('background', file);
         setBackgroundBusy(true);
         try {
-          const res = await fetch('/api/background', {
+          const res = await fetch(siteUrl('/api/background'), {
             method: 'POST',
             headers: GitHubClient.getAuthHeaders(githubConfig),
             body: formData,
@@ -245,7 +247,7 @@
 
         setBackgroundBusy(true);
         try {
-          const res = await fetch('/api/background/reset', {
+          const res = await fetch(siteUrl('/api/background/reset'), {
             method: 'POST',
             headers: GitHubClient.getAuthHeaders(githubConfig),
           });

@@ -6,7 +6,7 @@
   <title>笔记浏览 · {{ config.name }}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/notes/notes.css">
+  <link rel="stylesheet" href="{{ url_path('/static/notes/notes.css') }}">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -45,20 +45,22 @@
     }
   </style>
   <script>
+    window.SITE_BASE = {{ site_base | tojson }};
     window.NOTES_REPO_CONFIG = {{ notes_repo | tojson }};
   </script>
-  <script src="/static/notes/manifest.js" defer></script>
-  <script src="/static/notes/markdown.js" defer></script>
-  <script src="/static/notes/note-builder.js" defer></script>
-  <script src="/static/notes/github-client.js" defer></script>
-  <script src="/static/notes/browse.js" defer></script>
+  <script src="{{ url_path('/static/notes/site-path.js') }}"></script>
+  <script src="{{ url_path('/static/notes/manifest.js') }}" defer></script>
+  <script src="{{ url_path('/static/notes/markdown.js') }}" defer></script>
+  <script src="{{ url_path('/static/notes/note-builder.js') }}" defer></script>
+  <script src="{{ url_path('/static/notes/github-client.js') }}" defer></script>
+  <script src="{{ url_path('/static/notes/browse.js') }}" defer></script>
 </head>
 <body class="text-gray-800 dark:text-gray-200 min-h-screen">
   <div class="bg-container"><div class="bg-image"></div><div class="bg-overlay"></div></div>
 
   <nav class="fixed w-full top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center max-w-4xl">
-      <a href="/" class="font-bold text-lg flex items-center gap-2 hover:text-primary dark:hover:text-primary-dark">
+      <a href="{{ url_path('/') }}" class="font-bold text-lg flex items-center gap-2 hover:text-primary dark:hover:text-primary-dark">
         <i class="fa-solid fa-arrow-left text-sm"></i> 返回主页
       </a>
       <div class="flex items-center gap-2">
@@ -217,7 +219,7 @@
         formData.append('background', file);
         setBackgroundBusy(true);
         try {
-          const res = await fetch('/api/background', {
+          const res = await fetch(siteUrl('/api/background'), {
             method: 'POST',
             headers: GitHubClient.getAuthHeaders(githubConfig),
             body: formData,
@@ -245,7 +247,7 @@
 
         setBackgroundBusy(true);
         try {
-          const res = await fetch('/api/background/reset', {
+          const res = await fetch(siteUrl('/api/background/reset'), {
             method: 'POST',
             headers: GitHubClient.getAuthHeaders(githubConfig),
           });
