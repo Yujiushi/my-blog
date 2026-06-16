@@ -1,0 +1,49 @@
+{
+  "categories": {
+    "life": {
+      "label": "生活",
+      "emoji": "🌿",
+      "desc": "日常记录、习惯与心得",
+      "search": "生活 日常 习惯",
+      "children": [
+        {
+          "type": "page",
+          "title": "站点使用指南",
+          "slug": "welcome",
+          "date": "2026-06-16",
+          "search": "欢迎 开始 使用指南"
+        }
+      ]
+    },
+    "academic": {
+      "label": "学术",
+      "emoji": "📖",
+      "desc": "课程、论文与学习方法",
+      "search": "学术 学习 研究",
+      "children": [
+        {
+          "type": "page",
+          "title": "高效学习方法整理",
+          "slug": "study-tips",
+          "date": "2026-06-16",
+          "search": "学习方法 费曼 番茄钟"
+        }
+      ]
+    },
+    "career": {
+      "label": "职业",
+      "emoji": "💼",
+      "desc": "技能积累与职业规划",
+      "search": "职业 工作 职场",
+      "children": [
+        {
+          "type": "page",
+          "title": "简历与面试要点",
+          "slug": "resume-notes",
+          "date": "2026-06-16",
+          "search": "简历 面试 求职"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "github_url": "https://github.com/Yujiushi",
+  "dark_mode": "auto",
+  "name": "wowo",
+  "bio": "热爱生活与学习的笔记收藏者 · 记录点滴，方便随时回顾",
+  "introduction_file": "Introduction.md",
+  "avatar": "/static/avatars/default.svg",
+  "use_local_profile": true,
+  "profile_stats": {
+    "stat1_label": "笔记数量",
+    "stat2_label": "学习主题"
+  },
+  "tech_stack": [
+    { "name": "阅读", "color": "#6a11cb" },
+    { "name": "写作", "color": "#2575fc" },
+    { "name": "Python", "color": "#560bad" },
+    { "name": "笔记整理", "color": "#1e40af" }
+  ],
+  "activity_data": [12, 19, 8, 15, 22, 18, 25, 20, 14, 28, 16, 21],
+  "theme": {
+    "primary_color": "#6a11cb",
+    "secondary_color": "#2575fc",
+    "dark_primary_color": "#a855f7",
+    "dark_secondary_color": "#60a5fa"
+  },
+  "background": {
+    "image": "background.jpg",
+    "blur": 4,
+    "overlay_opacity": 0.6,
+    "overlay_color": "#f3f4f6",
+    "dark_overlay_color": "#121212"
+  },
+  "contact": {
+    "qq": "",
+    "wechat": "",
+    "bilibili": "",
+    "douyin": "",
+    "xiaohongshu": ""
+  },
+  "notes": {
+    "github_owner": "Yujiushi",
+    "github_repo": "my-note-website",
+    "github_branch": "main"
+  }
+}
