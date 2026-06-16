@@ -7,6 +7,12 @@
       "search": "生活 日常 习惯",
       "children": [
         {
+          "type": "folder",
+          "name": "231",
+          "slug": "231",
+          "children": []
+        },
+        {
           "type": "page",
           "title": "站点使用指南",
           "slug": "welcome",
