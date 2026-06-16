@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>笔记浏览 · wowo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/notes/notes.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#6a11cb', dark: '#a855f7' },
+            secondary: { DEFAULT: '#2575fc', dark: '#60a5fa' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .bg-container { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+    .bg-image {
+      position: absolute; inset: 0;
+      
+      background-image: url('background.jpg');
+      
+      background-size: cover; background-position: center;
+      filter: blur(4px); transform: scale(1.08);
+    }
+    .bg-overlay {
+      position: absolute; inset: 0;
+      background-color: #f3f4f6;
+      opacity: 0.6;
+    }
+    .dark .bg-overlay { background-color: #121212; }
+    .glass-panel {
+      background: rgba(255,255,255,0.55); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.35); border-radius: 1rem;
+    }
+    .dark .glass-panel {
+      background: rgba(17,24,39,0.65); border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+  <script>
+    window.NOTES_REPO_CONFIG = {"branch": "main", "owner": "Yujiushi", "repo": "my-note-website"};
+  </script>
+  <script src="/static/notes/manifest.js" defer></script>
+  <script src="/static/notes/markdown.js" defer></script>
+  <script src="/static/notes/note-builder.js" defer></script>
+  <script src="/static/notes/github-client.js" defer></script>
+  <script src="/static/notes/browse.js" defer></script>
+</head>
+<body class="text-gray-800 dark:text-gray-200 min-h-screen">
+  <div class="bg-container"><div class="bg-image"></div><div class="bg-overlay"></div></div>
+
+  <nav class="fixed w-full top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center max-w-4xl">
+      <a href="/" class="font-bold text-lg flex items-center gap-2 hover:text-primary dark:hover:text-primary-dark">
+        <i class="fa-solid fa-arrow-left text-sm"></i> 返回主页
+      </a>
+      <div class="flex items-center gap-2">
+        <button type="button" id="bg-upload-btn" class="edit-only hidden p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="更换背景">
+          <span class="sr-only">更换背景</span>
+          <i class="fa-solid fa-image text-gray-700 dark:text-gray-300"></i>
+        </button>
+        <button type="button" id="bg-reset-btn" class="edit-only hidden p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="恢复默认背景">
+          <span class="sr-only">恢复默认背景</span>
+          <i class="fa-solid fa-rotate-left text-gray-700 dark:text-gray-300"></i>
+        </button>
+        <input type="file" id="background-input" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+        <button id="theme-toggle" type="button" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+          <i class="fa-solid fa-moon dark:hidden"></i>
+          <i class="fa-solid fa-sun hidden dark:block text-yellow-400"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 pt-24 pb-16 max-w-4xl browse-main">
+    <div class="glass-panel p-6 shadow-xl">
+      <nav class="breadcrumb" id="breadcrumb" aria-label="路径"></nav>
+      <header class="browse-header">
+        <h1 id="browse-title" class="text-2xl font-bold">文件夹</h1>
+        <p class="browse-desc" id="browse-desc"></p>
+      </header>
+
+      <div class="browse-toolbar">
+        <button type="button" class="btn-secondary" id="btn-new-folder"><i class="fa-solid fa-folder-plus"></i> 新建文件夹</button>
+        <button type="button" class="btn-secondary" id="btn-new-page"><i class="fa-solid fa-file-circle-plus"></i> 新建页面</button>
+        <label class="btn-secondary btn-file">
+          <i class="fa-solid fa-upload"></i> 上传文件
+          <input type="file" id="file-upload" accept=".md,.txt,.markdown,.html,text/plain,text/markdown,text/html" hidden>
+        </label>
+        <button type="button" class="btn-ghost" id="btn-github" title="GitHub 同步设置"><i class="fa-solid fa-gear"></i></button>
+      </div>
+
+      <ul class="file-list" id="file-list">
+        <li class="file-list-loading">正在加载…</li>
+      </ul>
+      <div id="browse-status" class="upload-status" hidden></div>
+    </div>
+  </main>
+
+  <dialog class="site-dialog" id="dialog-folder">
+    <form method="dialog" id="form-folder">
+      <h2>新建文件夹</h2>
+      <label>文件夹名称 <input type="text" name="name" required placeholder="例如：日记、2024" autofocus></label>
+      <div class="dialog-actions">
+        <button type="button" class="btn-ghost" data-close>取消</button>
+        <button type="submit" class="btn-primary">创建</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="site-dialog" id="dialog-page">
+    <form method="dialog" id="form-page">
+      <h2>新建页面</h2>
+      <label>页面标题 <input type="text" name="title" required placeholder="笔记标题"></label>
+      <label>正文（支持 Markdown）<textarea name="content" rows="10" required placeholder="# 标题"></textarea></label>
+      <div class="dialog-actions">
+        <button type="button" class="btn-ghost" data-close>取消</button>
+        <button type="submit" class="btn-primary">创建并上传</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="site-dialog site-dialog--wide" id="dialog-github">
+    <form method="dialog" id="form-github">
+      <h2>GitHub 同步设置</h2>
+      <p class="form-hint">笔记、头像与背景的修改均需配置 Token。Token 仅保存在本机浏览器。</p>
+      <div class="form-row form-row--2">
+        <label>用户名 <input type="text" name="owner" required></label>
+        <label>仓库名 <input type="text" name="repo" required></label>
+      </div>
+      <div class="form-row form-row--2">
+        <label>分支 <input type="text" name="branch" value="main"></label>
+        <label>Token <input type="password" name="token" autocomplete="off"></label>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn-secondary" id="btn-test-github">测试连接</button>
+        <button type="button" class="btn-ghost" data-close>关闭</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+
+    function updateEditControlsVisibility() {
+      const hasToken = !!GitHubClient.loadConfig().token;
+      document.querySelectorAll('.edit-only').forEach(function (el) {
+        el.classList.toggle('hidden', !hasToken);
+      });
+    }
+
+    function requireEditToken() {
+      return GitHubClient.requireToken(function () {
+        document.getElementById('dialog-github').showModal();
+      });
+    }
+
+    updateEditControlsVisibility();
+    document.getElementById('form-github').addEventListener('submit', function () {
+      setTimeout(updateEditControlsVisibility, 0);
+    });
+
+    const backgroundInput = document.getElementById('background-input');
+    const bgUploadBtn = document.getElementById('bg-upload-btn');
+    const bgResetBtn = document.getElementById('bg-reset-btn');
+
+    function setBackgroundBusy(busy) {
+      [bgUploadBtn, bgResetBtn].forEach(function (el) {
+        if (!el) return;
+        el.style.opacity = busy ? '0.5' : '';
+        el.style.pointerEvents = busy ? 'none' : '';
+      });
+    }
+
+    if (bgUploadBtn && backgroundInput) {
+      bgUploadBtn.addEventListener('click', function () {
+        try {
+          requireEditToken();
+          backgroundInput.click();
+        } catch (err) {
+          /* 已打开设置对话框 */
+        }
+      });
+    }
+
+    if (backgroundInput && bgUploadBtn) {
+      backgroundInput.addEventListener('change', async function () {
+        const file = backgroundInput.files[0];
+        backgroundInput.value = '';
+        if (!file) return;
+
+        let githubConfig;
+        try {
+          githubConfig = requireEditToken();
+        } catch (err) {
+          return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+          alert('背景图片不能超过 10MB');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('background', file);
+        setBackgroundBusy(true);
+        try {
+          const res = await fetch('/api/background', {
+            method: 'POST',
+            headers: GitHubClient.getAuthHeaders(githubConfig),
+            body: formData,
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '上传失败');
+          window.location.reload();
+        } catch (err) {
+          alert(err.message || '上传失败');
+          setBackgroundBusy(false);
+        }
+      });
+    }
+
+    if (bgResetBtn) {
+      bgResetBtn.addEventListener('click', async function () {
+        if (!confirm('确定恢复为默认背景图吗？')) return;
+
+        let githubConfig;
+        try {
+          githubConfig = requireEditToken();
+        } catch (err) {
+          return;
+        }
+
+        setBackgroundBusy(true);
+        try {
+          const res = await fetch('/api/background/reset', {
+            method: 'POST',
+            headers: GitHubClient.getAuthHeaders(githubConfig),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '恢复失败');
+          window.location.reload();
+        } catch (err) {
+          alert(err.message || '恢复失败');
+          setBackgroundBusy(false);
+        }
+      });
+    }
+    });
+  </script>
+</body>
+</html>
