@@ -215,6 +215,21 @@
     });
   }
 
+  function removeItem(manifest, categoryId, folderPath, type, key) {
+    const container = getContainer(manifest, categoryId, folderPath);
+    if (!container) throw new Error("目录不存在");
+
+    const index = container.findIndex(function (item) {
+      if (type === "folder") return item.type === "folder" && item.slug === key;
+      if (type === "page") return item.type === "page" && item.slug === key;
+      if (type === "file") return item.type === "file" && item.filename === key;
+      return false;
+    });
+
+    if (index < 0) throw new Error("项目不存在");
+    container.splice(index, 1);
+  }
+
   function today() {
     const d = new Date();
     const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -275,6 +290,7 @@
     fileHref: fileHref,
     findFile: findFile,
     addFile: addFile,
+    removeItem: removeItem,
     browseHref: browseHref,
     assetDepth: assetDepth,
     rootPrefix: rootPrefix,

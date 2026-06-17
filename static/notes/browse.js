@@ -137,6 +137,203 @@
     return "📎";
   }
 
+  function downloadFilename(item) {
+    if (item.type === "file") return item.filename;
+    if (item.type === "page") return item.slug + ".html";
+    return "";
+  }
+
+  function itemOpenUrl(item) {
+    if (item.type === "file") {
+      return NoteManifest.fileHref(categoryId, folderPath, item.filename);
+    }
+    if (item.type === "page") {
+      return NoteManifest.pageHref(categoryId, folderPath, item.slug);
+    }
+    return "";
+  }
+
+  function downloadButton(url, filename) {
+    return (
+      '<button type="button" class="btn-file-download" title="下载 ' +
+      escapeHtml(filename) +
+      '" data-download-url="' +
+      escapeHtml(url) +
+      '" data-download-name="' +
+      escapeHtml(filename) +
+      '"><i class="fa-solid fa-download" aria-hidden="true"></i><span class="sr-only">下载</span></button>'
+    );
+  }
+
+  function itemKey(item) {
+    if (item.type === "file") return item.filename;
+    if (item.type === "page" || item.type === "folder") return item.slug;
+    return "";
+  }
+
+  function itemLabel(item) {
+    if (item.type === "folder") return item.name;
+    if (item.type === "file") return item.title || item.filename;
+    if (item.type === "page") return item.title;
+    return "";
+  }
+
+  function deleteButton(type, key, label) {
+    return (
+      '<button type="button" class="btn-file-delete" title="删除 ' +
+      escapeHtml(label) +
+      '" data-item-type="' +
+      escapeHtml(type) +
+      '" data-item-key="' +
+      escapeHtml(key) +
+      '" data-item-label="' +
+      escapeHtml(label) +
+      '"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span class="sr-only">删除</span></button>'
+    );
+  }
+
+  function fileRow(openUrl, innerHtml, filename, openInNewTab, itemType, itemKey, itemLabel) {
+    const targetAttr = openInNewTab
+      ? ' target="_blank" rel="noopener noreferrer"'
+      : "";
+    return (
+      '<div class="file-item__row">' +
+      '<a href="' +
+      openUrl +
+      '"' +
+      targetAttr +
+      ">" +
+      innerHtml +
+      "</a>" +
+      downloadButton(openUrl, filename) +
+      deleteButton(itemType, itemKey, itemLabel) +
+      "</div>"
+    );
+  }
+
+  function folderRow(href, innerHtml, item) {
+    return (
+      '<div class="file-item__row">' +
+      '<a href="' +
+      href +
+      '">' +
+      innerHtml +
+      "</a>" +
+      deleteButton("folder", item.slug, item.name) +
+      "</div>"
+    );
+  }
+
+  async function triggerDownload(url, filename) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("下载失败");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+  }
+
+  function setupFileListActions() {
+    const list = document.getElementById("file-list");
+    if (!list || list.dataset.actionsBound) return;
+    list.dataset.actionsBound = "1";
+    list.addEventListener("click", function (e) {
+      const downloadBtn = e.target.closest(".btn-file-download");
+      if (downloadBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = downloadBtn.getAttribute("data-download-url");
+        const name = downloadBtn.getAttribute("data-download-name");
+        if (!url || !name) return;
+        setStatus("info", "正在下载 " + name + "…");
+        triggerDownload(url, name)
+          .then(function () {
+            setStatus("success", "已开始下载 " + name);
+          })
+          .catch(function () {
+            setStatus("error", "下载失败，请稍后重试");
+          });
+        return;
+      }
+
+      const deleteBtn = e.target.closest(".btn-file-delete");
+      if (deleteBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const type = deleteBtn.getAttribute("data-item-type");
+        const key = deleteBtn.getAttribute("data-item-key");
+        const label = deleteBtn.getAttribute("data-item-label");
+        if (!type || !key) return;
+        deleteItem(type, key, label).catch(function (err) {
+          setStatus("error", err.message || "删除失败");
+        });
+      }
+    });
+  }
+
+  async function deleteItem(type, key, label) {
+    const config = requireToken();
+    const msg =
+      type === "folder"
+        ? "确定删除空文件夹「" + label + "」吗？"
+        : "确定删除「" + label + "」吗？此操作不可恢复。";
+    if (!confirm(msg)) return;
+
+    const remote = await fetchRemoteManifest(config);
+    const data = remote.manifest;
+
+    if (type === "folder") {
+      const folder = NoteManifest.findFolder(data, categoryId, folderPath, key);
+      if (!folder) throw new Error("文件夹不存在");
+      if ((folder.children || []).length > 0) {
+        throw new Error("请先清空文件夹内的内容，再删除文件夹");
+      }
+      setStatus("info", "正在删除文件夹…");
+      NoteManifest.removeItem(data, categoryId, folderPath, "folder", key);
+      await saveManifest(config, data, remote.sha, "删除文件夹：" + label);
+    } else if (type === "page") {
+      const repoPath = NoteManifest.pageRepoPath(categoryId, folderPath, key);
+      setStatus("info", "正在删除页面…");
+      const meta = await GitHubClient.fileExists(config, repoPath);
+      if (meta) {
+        await GitHubClient.deleteFile(config, repoPath, "删除页面：" + label, meta.sha);
+      }
+      NoteManifest.removeItem(data, categoryId, folderPath, "page", key);
+      await saveManifest(config, data, remote.sha, "更新目录：删除 " + label);
+    } else if (type === "file") {
+      const repoPath = NoteManifest.fileRepoPath(categoryId, folderPath, key);
+      setStatus("info", "正在删除文件…");
+      const meta = await GitHubClient.fileExists(config, repoPath);
+      if (meta) {
+        await GitHubClient.deleteFile(config, repoPath, "删除附件：" + label, meta.sha);
+      }
+      NoteManifest.removeItem(data, categoryId, folderPath, "file", key);
+      await saveManifest(config, data, remote.sha, "更新目录：删除 " + label);
+    } else {
+      throw new Error("未知类型");
+    }
+
+    setStatus("success", "已删除「" + label + "」");
+    manifest = data;
+    renderAll();
+  }
+
   function countDesc(children) {
     const n = NoteManifest.countItems(children || []);
     return n ? "共 " + n + " 项" : "空文件夹";
@@ -171,28 +368,24 @@
             ? folderPath + "/" + item.slug
             : item.slug;
           const count = NoteManifest.countItems(item.children);
-          return (
-            '<li class="file-item file-item--folder">' +
-            '<a href="' +
-            NoteManifest.browseHref(categoryId, childPath) +
-            '">' +
+          const inner =
             '<span class="file-icon">📁</span>' +
             '<span class="file-name">' +
             escapeHtml(item.name) +
             "</span>" +
             '<span class="file-meta">' +
             count +
-            " 项</span>" +
-            "</a></li>"
+            " 项</span>";
+          return (
+            '<li class="file-item file-item--folder">' +
+            folderRow(NoteManifest.browseHref(categoryId, childPath), inner, item) +
+            "</li>"
           );
         }
 
         if (item.type === "file") {
-          return (
-            '<li class="file-item file-item--file">' +
-            '<a href="' +
-            NoteManifest.fileHref(categoryId, folderPath, item.filename) +
-            '" target="_blank" rel="noopener noreferrer">' +
+          const openUrl = itemOpenUrl(item);
+          const inner =
             '<span class="file-icon">' +
             fileIcon(item.filename) +
             "</span>" +
@@ -201,24 +394,43 @@
             "</span>" +
             '<span class="file-meta">' +
             escapeHtml(item.date || "") +
-            "</span>" +
-            "</a></li>"
+            "</span>";
+          return (
+            '<li class="file-item file-item--file">' +
+            fileRow(
+              openUrl,
+              inner,
+              downloadFilename(item),
+              true,
+              "file",
+              itemKey(item),
+              itemLabel(item)
+            ) +
+            "</li>"
           );
         }
 
-        return (
-          '<li class="file-item file-item--page">' +
-          '<a href="' +
-          NoteManifest.pageHref(categoryId, folderPath, item.slug) +
-          '">' +
+        const pageUrl = itemOpenUrl(item);
+        const pageInner =
           '<span class="file-icon">📄</span>' +
           '<span class="file-name">' +
           escapeHtml(item.title) +
           "</span>" +
           '<span class="file-meta">' +
           escapeHtml(item.date || "") +
-          "</span>" +
-          "</a></li>"
+          "</span>";
+        return (
+          '<li class="file-item file-item--page">' +
+          fileRow(
+            pageUrl,
+            pageInner,
+            downloadFilename(item),
+            false,
+            "page",
+            itemKey(item),
+            itemLabel(item)
+          ) +
+          "</li>"
         );
       })
       .join("");
@@ -524,6 +736,7 @@
     }
 
     setupDialogs();
+    setupFileListActions();
 
     try {
       manifest = await NoteManifest.load();

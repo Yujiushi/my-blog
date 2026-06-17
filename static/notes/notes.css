@@ -862,6 +862,61 @@ main {
   transition: background 0.15s;
 }
 
+.file-item__row {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--border);
+}
+
+.file-item:first-child .file-item__row,
+.file-item:first-child > a {
+  border-top: none;
+}
+
+.file-item__row > a:first-child {
+  flex: 1;
+  border-top: none;
+  min-width: 0;
+}
+
+.btn-file-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  flex-shrink: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-file-download:hover {
+  background: var(--bg-code);
+  color: var(--accent);
+}
+
+.btn-file-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  flex-shrink: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-file-delete:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
 .file-item:first-child a {
   border-top: none;
 }

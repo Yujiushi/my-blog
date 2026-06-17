@@ -163,6 +163,26 @@
     return res.json();
   }
 
+  async function deleteFile(config, path, message, sha) {
+    const res = await fetch(apiUrl(config, path).replace(/\?.*$/, ""), {
+      method: "DELETE",
+      headers: Object.assign({ "Content-Type": "application/json" }, headers(config)),
+      body: JSON.stringify({
+        message: message,
+        sha: sha,
+        branch: config.branch || "main",
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(function () {
+        return {};
+      });
+      throw new Error(err.message || "删除文件失败：" + path);
+    }
+    return res.json();
+  }
+
   async function testConnection(config) {
     const res = await fetch(
       "https://api.github.com/repos/" +
@@ -201,6 +221,7 @@
     fileExists: fileExists,
     putFile: putFile,
     putBinaryFile: putBinaryFile,
+    deleteFile: deleteFile,
     testConnection: testConnection,
     requireToken: requireToken,
     getAuthHeaders: getAuthHeaders,
