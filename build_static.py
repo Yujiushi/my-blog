@@ -61,27 +61,33 @@ try:
         
         # 使用Flask测试客户端
         client = app_module.app.test_client()
-        response = client.get('/')
         
-        if response.status_code == 200:
-            # 保存HTML内容到根目录
-            html_path = os.path.join(static_dir, 'index.html')
-            
-            # 确认是否已有index.html文件，如果有则备份
+        pages = [
+            ('/', 'index.html'),
+            ('/browse', 'browse.html'),
+        ]
+        
+        for route, filename in pages:
+            response = client.get(route)
+            if response.status_code != 200:
+                print(f"错误：无法获取 {route} 页面内容，状态码: {response.status_code}")
+                sys.exit(1)
+
+            html_path = os.path.join(static_dir, filename)
             if os.path.exists(html_path):
-                backup_path = os.path.join(static_dir, 'index.html.bak')
-                # 检查源文件和目标文件是否相同
+                backup_path = html_path + '.bak'
                 if os.path.normpath(html_path) != os.path.normpath(backup_path):
                     shutil.copy(html_path, backup_path)
-                    print(f"已备份现有index.html文件到: {backup_path}")
-            
+                    print(f"已备份现有 {filename} 到: {backup_path}")
+
             with open(html_path, 'wb') as f:
                 f.write(response.data)
-            
-            print(f"静态HTML文件已保存到项目根目录: {html_path}")
-        else:
-            print(f"错误：无法获取首页内容，状态码: {response.status_code}")
-            sys.exit(1)
+            print(f"静态 HTML 已保存: {html_path}")
+
+        nojekyll_path = os.path.join(static_dir, '.nojekyll')
+        with open(nojekyll_path, 'w', encoding='utf-8') as f:
+            f.write('')
+        print(f"已创建 .nojekyll: {nojekyll_path}")
     else:
         print("错误：app.py中未找到app实例")
         sys.exit(1)
@@ -121,7 +127,7 @@ for file in [background_image]:  # 使用从配置中读取的背景图片文件
             print(f"源文件和目标文件是同一个文件，跳过复制: {file}")
 
 print("\n静态文件构建完成！")
-print(f"\n静态HTML文件已生成在项目根目录: {os.path.join(static_dir, 'index.html')}")
+print(f"\n静态 HTML 已生成: index.html、browse.html、.nojekyll")
 print(f"\n如何部署到GitHub Pages:")
 print("方式一：自动部署（已配置GitHub Pages Actions）")
 print("1. 当您推送到main或master分支时，GitHub Actions会自动运行")
@@ -130,7 +136,7 @@ print("3. 您也可以通过GitHub仓库的Actions页面手动触发运行")
 print("4. 构建产物会直接部署到GitHub Pages，无需额外配置GitHub Token")
 print("\n方式二：手动部署")
 print("1. 确保您已经在项目根目录")
-print("2. 直接将生成的index.html和background.jpg文件部署到您的Web服务器")
+print("2. 将 index.html、browse.html、.nojekyll 及 static/、notes/ 等一并 push 到 GitHub")
 print("\n注意：")
 print("1. 使用GitHub Pages部署方式不需要配置GitHub Token")
 print("2. 部署不会在仓库中产生额外的提交记录")
