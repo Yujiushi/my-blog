@@ -12,15 +12,7 @@
       "emoji": "📖",
       "desc": "课程、论文与学习方法",
       "search": "学术 学习 研究",
-      "children": [
-        {
-          "type": "page",
-          "title": "高效学习方法整理",
-          "slug": "study-tips",
-          "date": "2026-06-16",
-          "search": "学习方法 费曼 番茄钟"
-        }
-      ]
+      "children": []
     },
     "career": {
       "label": "职业",
