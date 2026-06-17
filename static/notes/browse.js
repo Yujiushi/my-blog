@@ -126,6 +126,17 @@
     document.title = (folder ? folder.name : "文件夹") + " · 我的笔记";
   }
 
+  function fileIcon(filename) {
+    const ext = String(filename).split(".").pop().toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].indexOf(ext) >= 0) return "🖼️";
+    if (ext === "pdf") return "📕";
+    if (["doc", "docx"].indexOf(ext) >= 0) return "📘";
+    if (["xls", "xlsx", "csv"].indexOf(ext) >= 0) return "📗";
+    if (["ppt", "pptx"].indexOf(ext) >= 0) return "📙";
+    if (["zip", "rar", "7z"].indexOf(ext) >= 0) return "🗜️";
+    return "📎";
+  }
+
   function countDesc(children) {
     const n = NoteManifest.countItems(children || []);
     return n ? "共 " + n + " 项" : "空文件夹";
@@ -172,6 +183,25 @@
             '<span class="file-meta">' +
             count +
             " 项</span>" +
+            "</a></li>"
+          );
+        }
+
+        if (item.type === "file") {
+          return (
+            '<li class="file-item file-item--file">' +
+            '<a href="' +
+            NoteManifest.fileHref(categoryId, folderPath, item.filename) +
+            '" target="_blank" rel="noopener noreferrer">' +
+            '<span class="file-icon">' +
+            fileIcon(item.filename) +
+            "</span>" +
+            '<span class="file-name">' +
+            escapeHtml(item.title || item.filename) +
+            "</span>" +
+            '<span class="file-meta">' +
+            escapeHtml(item.date || "") +
+            "</span>" +
             "</a></li>"
           );
         }
@@ -250,10 +280,82 @@
     renderAll();
   }
 
+  const UPLOAD_TEXT_EXTS = ["md", "markdown", "txt", "html"];
+  const UPLOAD_BINARY_EXTS = [
+    "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx",
+    "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp",
+    "zip", "rar", "7z",
+  ];
+  const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+  function sanitizeFilename(name) {
+    return String(name).replace(/[\\/:*?"<>|]/g, "_").trim() || "file";
+  }
+
+  function readFileAsArrayBuffer(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        resolve(reader.result);
+      };
+      reader.onerror = function () {
+        reject(new Error("读取文件失败"));
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function uploadBinaryFile(file) {
+    const config = requireToken();
+    const safeName = sanitizeFilename(file.name);
+    const ext = safeName.split(".").pop().toLowerCase();
+    const baseName = safeName.replace(/\.[^.]+$/, "");
+    const repoPath = NoteManifest.fileRepoPath(categoryId, folderPath, safeName);
+
+    if (await GitHubClient.fileExists(config, repoPath)) {
+      throw new Error("同名文件已存在");
+    }
+
+    const remote = await fetchRemoteManifest(config);
+    const data = remote.manifest;
+    const category = NoteManifest.getCategory(data, categoryId);
+    if (!category) throw new Error("分类不存在");
+
+    setStatus("info", "正在上传 " + safeName + "…");
+    const buffer = await readFileAsArrayBuffer(file);
+    await GitHubClient.putBinaryFile(
+      config,
+      repoPath,
+      buffer,
+      "上传附件：" + safeName
+    );
+
+    NoteManifest.addFile(data, categoryId, folderPath, {
+      title: baseName,
+      filename: safeName,
+      date: NoteManifest.today(),
+      search: baseName + " " + ext,
+    });
+    await saveManifest(config, data, remote.sha, "更新目录：" + safeName);
+
+    setStatus("success", "文件已上传！约 1～3 分钟后可在线访问。");
+    manifest = data;
+    renderAll();
+  }
+
   async function uploadFile(file) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      throw new Error("文件不能超过 20MB");
+    }
+
     const name = file.name;
     const ext = name.split(".").pop().toLowerCase();
     const baseName = name.replace(/\.[^.]+$/, "");
+
+    if (UPLOAD_BINARY_EXTS.indexOf(ext) >= 0) {
+      await uploadBinaryFile(file);
+      return;
+    }
 
     if (ext === "html") {
       const config = requireToken();
@@ -291,7 +393,9 @@
       return;
     }
 
-    throw new Error("仅支持 .md / .txt / .html 文件");
+    throw new Error(
+      "不支持的文件类型。支持：笔记 .md/.txt/.html，以及图片、PDF、Word、Excel 等附件"
+    );
   }
 
   function readFileAsText(file) {

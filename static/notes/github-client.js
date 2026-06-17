@@ -93,6 +93,53 @@
     };
   }
 
+  function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  async function fileExists(config, path) {
+    const res = await fetch(apiUrl(config, path), { headers: headers(config) });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(function () {
+        return {};
+      });
+      throw new Error(err.message || "检查文件失败：" + path);
+    }
+    const data = await res.json();
+    if (Array.isArray(data)) throw new Error("路径指向目录而非文件：" + path);
+    return { sha: data.sha };
+  }
+
+  async function putBinaryFile(config, path, arrayBuffer, message, sha) {
+    const body = {
+      message: message,
+      content: arrayBufferToBase64(arrayBuffer),
+      branch: config.branch || "main",
+    };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(apiUrl(config, path).replace(/\?.*$/, ""), {
+      method: "PUT",
+      headers: Object.assign({ "Content-Type": "application/json" }, headers(config)),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(function () {
+        return {};
+      });
+      throw new Error(err.message || "写入文件失败：" + path);
+    }
+    return res.json();
+  }
+
   async function putFile(config, path, content, message, sha) {
     const body = {
       message: message,
@@ -151,7 +198,9 @@
     loadConfig: loadConfig,
     saveConfig: saveConfig,
     getFile: getFile,
+    fileExists: fileExists,
     putFile: putFile,
+    putBinaryFile: putBinaryFile,
     testConnection: testConnection,
     requireToken: requireToken,
     getAuthHeaders: getAuthHeaders,

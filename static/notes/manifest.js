@@ -57,7 +57,7 @@
     children.forEach(function (item) {
       if (item.type === "folder") {
         count += 1 + countItems(item.children);
-      } else if (item.type === "page") {
+      } else if (item.type === "page" || item.type === "file") {
         count += 1;
       }
     });
@@ -75,6 +75,42 @@
 
   function pageHref(categoryId, folderPath, slug) {
     return siteUrl("/" + pageRepoPath(categoryId, folderPath, slug));
+  }
+
+  function fileRepoPath(categoryId, folderPath, filename) {
+    const parts = ["notes", categoryId];
+    splitPath(folderPath).forEach(function (p) {
+      parts.push(p);
+    });
+    parts.push(filename);
+    return parts.join("/");
+  }
+
+  function fileHref(categoryId, folderPath, filename) {
+    return siteUrl("/" + fileRepoPath(categoryId, folderPath, filename));
+  }
+
+  function findFile(manifest, categoryId, folderPath, filename) {
+    const container = getContainer(manifest, categoryId, folderPath);
+    if (!container) return null;
+    return container.find(function (item) {
+      return item.type === "file" && item.filename === filename;
+    });
+  }
+
+  function addFile(manifest, categoryId, folderPath, file) {
+    const container = getContainer(manifest, categoryId, folderPath);
+    if (!container) throw new Error("目录不存在");
+    if (findFile(manifest, categoryId, folderPath, file.filename)) {
+      throw new Error("同名文件已存在");
+    }
+    container.unshift({
+      type: "file",
+      title: file.title,
+      filename: file.filename,
+      date: file.date,
+      search: file.search || file.title,
+    });
   }
 
   function browseHref(categoryId, folderPath) {
@@ -235,6 +271,10 @@
     countItems: countItems,
     pageRepoPath: pageRepoPath,
     pageHref: pageHref,
+    fileRepoPath: fileRepoPath,
+    fileHref: fileHref,
+    findFile: findFile,
+    addFile: addFile,
     browseHref: browseHref,
     assetDepth: assetDepth,
     rootPrefix: rootPrefix,
