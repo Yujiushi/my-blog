@@ -78,12 +78,12 @@ def load_notes_manifest():
         return json.load(f)
 
 def count_pages(children):
-    """统计目录树中的页面（type=page）数量，不含文件夹。"""
+    """统计目录树中的笔记数量：页面与附件等文件，不含文件夹。"""
     if not children:
         return 0
     total = 0
     for item in children:
-        if item.get("type") == "page":
+        if item.get("type") in ("page", "file"):
             total += 1
         elif item.get("type") == "folder":
             total += count_pages(item.get("children", []))
@@ -99,7 +99,7 @@ def get_notes_summary():
     def walk_dates(children):
         nonlocal last_date
         for item in children or []:
-            if item.get("type") == "page":
+            if item.get("type") in ("page", "file"):
                 d = item.get("date", "")
                 if d > last_date:
                     last_date = d

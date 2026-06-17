@@ -42,7 +42,7 @@
     if (!children) return 0;
     let count = 0;
     children.forEach(function (item) {
-      if (item.type === "page") {
+      if (item.type === "page" || item.type === "file") {
         count += 1;
       } else if (item.type === "folder") {
         count += countPages(item.children);

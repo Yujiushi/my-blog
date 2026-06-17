@@ -891,7 +891,7 @@
 
                     function walkDates(children) {
                         (children || []).forEach(function (item) {
-                            if (item.type === 'page') {
+                            if (item.type === 'page' || item.type === 'file') {
                                 const d = item.date || '';
                                 if (d > lastDate) lastDate = d;
                             } else if (item.type === 'folder') {
