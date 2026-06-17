@@ -5,14 +5,7 @@
       "emoji": "🌿",
       "desc": "日常记录、习惯与心得",
       "search": "生活 日常 习惯",
-      "children": [
-        {
-          "type": "folder",
-          "name": "231",
-          "slug": "231",
-          "children": []
-        }
-      ]
+      "children": []
     },
     "academic": {
       "label": "学术",
