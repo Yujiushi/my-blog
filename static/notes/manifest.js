@@ -38,6 +38,19 @@
     return container;
   }
 
+  function countPages(children) {
+    if (!children) return 0;
+    let count = 0;
+    children.forEach(function (item) {
+      if (item.type === "page") {
+        count += 1;
+      } else if (item.type === "folder") {
+        count += countPages(item.children);
+      }
+    });
+    return count;
+  }
+
   function countItems(children) {
     if (!children) return 0;
     let count = 0;
@@ -218,6 +231,7 @@
     splitPath: splitPath,
     getCategory: getCategory,
     getContainer: getContainer,
+    countPages: countPages,
     countItems: countItems,
     pageRepoPath: pageRepoPath,
     pageHref: pageHref,

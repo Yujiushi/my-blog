@@ -492,7 +492,7 @@
                     <!-- 统计信息 -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-center">
-                            <div class="text-2xl font-bold text-primary dark:text-primary-dark mb-1">{{ github_info.total_repos }}</div>
+                            <div id="stat-note-count" class="text-2xl font-bold text-primary dark:text-primary-dark mb-1">{{ github_info.total_repos }}</div>
                             <div class="text-sm text-gray-600 dark:text-gray-400">{{ github_info.total_repos_label }}</div>
                         </div>
                         <div class="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-center">
@@ -558,8 +558,8 @@
                         笔记库
                     </h2>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        共 {{ notes_info.total_pages }} 篇笔记
-                        {% if notes_info.last_updated %}· 最近更新 {{ notes_info.last_updated }}{% endif %}
+                        共 <span id="notes-total-count">{{ notes_info.total_pages }}</span> 篇笔记
+                        <span id="notes-last-updated">{% if notes_info.last_updated %}· 最近更新 <span id="notes-last-date">{{ notes_info.last_updated }}</span>{% endif %}</span>
                     </p>
                     <div class="space-y-3">
                         {% if notes_info.categories %}
@@ -573,7 +573,7 @@
                                                 <p class="text-gray-600 dark:text-gray-400 text-sm">{{ cat.desc }}</p>
                                             </div>
                                         </div>
-                                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ cat.count }} 项 →</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400 cat-item-count" data-category="{{ cat.id }}">{{ cat.count }} 篇 →</span>
                                     </div>
                                 </a>
                             {% endfor %}
@@ -653,6 +653,7 @@
         window.NOTES_REPO_CONFIG = {{ notes_repo | tojson }};
     </script>
     <script src="{{ url_path('/static/notes/site-path.js') }}"></script>
+    <script src="{{ url_path('/static/notes/manifest.js') }}"></script>
     <script src="{{ url_path('/static/notes/github-client.js') }}"></script>
 
     <!-- JavaScript -->
@@ -880,6 +881,51 @@
             });
 
             updateEditControlsVisibility();
+
+            async function refreshNotesStats() {
+                if (!window.NoteManifest) return;
+                try {
+                    const manifest = await NoteManifest.load();
+                    let total = 0;
+                    let lastDate = '';
+
+                    function walkDates(children) {
+                        (children || []).forEach(function (item) {
+                            if (item.type === 'page') {
+                                const d = item.date || '';
+                                if (d > lastDate) lastDate = d;
+                            } else if (item.type === 'folder') {
+                                walkDates(item.children);
+                            }
+                        });
+                    }
+
+                    NoteManifest.CATEGORY_ORDER.forEach(function (id) {
+                        const cat = NoteManifest.getCategory(manifest, id);
+                        if (!cat) return;
+                        const n = NoteManifest.countPages(cat.children);
+                        total += n;
+                        walkDates(cat.children);
+                        const el = document.querySelector('.cat-item-count[data-category="' + id + '"]');
+                        if (el) el.textContent = n + ' 篇 →';
+                    });
+
+                    const statEl = document.getElementById('stat-note-count');
+                    if (statEl) statEl.textContent = total;
+                    const totalEl = document.getElementById('notes-total-count');
+                    if (totalEl) totalEl.textContent = total;
+                    if (lastDate) {
+                        const dateEl = document.getElementById('notes-last-date');
+                        const wrapEl = document.getElementById('notes-last-updated');
+                        if (dateEl) dateEl.textContent = lastDate;
+                        else if (wrapEl) wrapEl.textContent = '· 最近更新 ' + lastDate;
+                    }
+                } catch (err) {
+                    /* 保留构建时的静态数字 */
+                }
+            }
+
+            refreshNotesStats();
 
             // 头像上传
             const avatarInput = document.getElementById('avatar-input');

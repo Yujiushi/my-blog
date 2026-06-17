@@ -77,15 +77,16 @@ def load_notes_manifest():
     with open(notes_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def count_note_items(children):
+def count_pages(children):
+    """统计目录树中的页面（type=page）数量，不含文件夹。"""
     if not children:
         return 0
     total = 0
     for item in children:
-        if item.get("type") == "folder":
-            total += 1 + count_note_items(item.get("children", []))
-        elif item.get("type") == "page":
+        if item.get("type") == "page":
             total += 1
+        elif item.get("type") == "folder":
+            total += count_pages(item.get("children", []))
     return total
 
 def get_notes_summary():
@@ -95,30 +96,30 @@ def get_notes_summary():
     total_pages = 0
     last_date = ""
 
+    def walk_dates(children):
+        nonlocal last_date
+        for item in children or []:
+            if item.get("type") == "page":
+                d = item.get("date", "")
+                if d > last_date:
+                    last_date = d
+            elif item.get("type") == "folder":
+                walk_dates(item.get("children", []))
+
     for key in NOTES_CATEGORY_ORDER:
         cat = categories.get(key)
         if not cat:
             continue
-        count = count_note_items(cat.get("children", []))
-
-        def walk_pages(children):
-            nonlocal total_pages, last_date
-            for item in children or []:
-                if item.get("type") == "page":
-                    total_pages += 1
-                    d = item.get("date", "")
-                    if d > last_date:
-                        last_date = d
-                elif item.get("type") == "folder":
-                    walk_pages(item.get("children", []))
-
-        walk_pages(cat.get("children", []))
+        children = cat.get("children", [])
+        page_count = count_pages(children)
+        total_pages += page_count
+        walk_dates(children)
         summary.append({
             "id": key,
             "label": cat.get("label", key),
             "emoji": cat.get("emoji", "📁"),
             "desc": cat.get("desc", ""),
-            "count": count,
+            "count": page_count,
             "browse_url": url_path('/browse.html') + f'?c={key}',
         })
 
