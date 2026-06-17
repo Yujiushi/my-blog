@@ -289,6 +289,8 @@
     fileRepoPath: fileRepoPath,
     fileHref: fileHref,
     findFile: findFile,
+    findFolder: findFolder,
+    findPage: findPage,
     addFile: addFile,
     removeItem: removeItem,
     browseHref: browseHref,
