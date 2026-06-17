@@ -610,6 +610,92 @@
     );
   }
 
+  function insertAtCursor(textarea, text) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = textarea.value.substring(0, start);
+    const after = textarea.value.substring(end);
+    textarea.value = before + text + after;
+    const pos = start + text.length;
+    textarea.selectionStart = pos;
+    textarea.selectionEnd = pos;
+    textarea.focus();
+  }
+
+  function mimeToExt(mime) {
+    const map = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/gif": "gif",
+      "image/webp": "webp",
+      "image/bmp": "bmp",
+    };
+    return map[mime] || "png";
+  }
+
+  function uniquePasteFilename(file) {
+    const ext = mimeToExt(file.type) || "png";
+    return "paste-" + Date.now() + "." + ext;
+  }
+
+  async function uploadPastedImage(file) {
+    const config = requireToken();
+    const safeName = sanitizeFilename(uniquePasteFilename(file));
+    const repoPath = NoteManifest.fileRepoPath(categoryId, folderPath, safeName);
+
+    if (await GitHubClient.fileExists(config, repoPath)) {
+      throw new Error("图片文件名冲突，请稍后重试");
+    }
+
+    const buffer = await readFileAsArrayBuffer(file);
+    await GitHubClient.putBinaryFile(
+      config,
+      repoPath,
+      buffer,
+      "粘贴图片：" + safeName
+    );
+
+    return {
+      filename: safeName,
+      url: NoteManifest.fileHref(categoryId, folderPath, safeName),
+    };
+  }
+
+  async function insertPastedImage(textarea, file) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      throw new Error("图片不能超过 20MB");
+    }
+    setStatus("info", "正在上传粘贴的图片…");
+    const uploaded = await uploadPastedImage(file);
+    const md = "\n![图片](" + uploaded.url + ")\n";
+    insertAtCursor(textarea, md);
+    setStatus("success", "图片已插入正文");
+  }
+
+  function setupPagePasteImages() {
+    const textarea = document.getElementById("page-content");
+    if (!textarea || textarea.dataset.pasteBound) return;
+    textarea.dataset.pasteBound = "1";
+
+    textarea.addEventListener("paste", function (e) {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== 0) continue;
+        e.preventDefault();
+        const file = items[i].getAsFile();
+        if (!file) return;
+
+        insertPastedImage(textarea, file).catch(function (err) {
+          if (err.message === "未配置 Token") return;
+          setStatus("error", err.message || "图片粘贴失败");
+        });
+        return;
+      }
+    });
+  }
+
   function readFileAsText(file) {
     return new Promise(function (resolve, reject) {
       const reader = new FileReader();
@@ -654,7 +740,10 @@
     document.getElementById("btn-new-page").addEventListener("click", function () {
       document.getElementById("form-page").reset();
       document.getElementById("dialog-page").showModal();
+      setupPagePasteImages();
     });
+
+    setupPagePasteImages();
 
     document.getElementById("form-page").addEventListener("submit", async function (e) {
       e.preventDefault();

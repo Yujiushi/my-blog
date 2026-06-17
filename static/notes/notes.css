@@ -482,6 +482,26 @@ main {
   padding: 0;
 }
 
+.note-figure {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.note-content .note-image,
+.note-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.site-dialog textarea[name="content"] {
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
 .note-nav {
   display: flex;
   justify-content: space-between;

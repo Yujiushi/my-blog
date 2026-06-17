@@ -71,6 +71,19 @@
         continue;
       }
 
+      const image = line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
+      if (image) {
+        closeList();
+        html.push(
+          '<figure class="note-figure"><img src="' +
+            escapeHtml(image[2]) +
+            '" alt="' +
+            escapeHtml(image[1]) +
+            '" class="note-image" loading="lazy"></figure>'
+        );
+        continue;
+      }
+
       const ul = line.match(/^[-*]\s+(.+)$/);
       if (ul) {
         if (listType !== "ul") {

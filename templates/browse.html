@@ -121,7 +121,9 @@
     <form method="dialog" id="form-page">
       <h2>新建页面</h2>
       <label>页面标题 <input type="text" name="title" required placeholder="笔记标题"></label>
-      <label>正文（支持 Markdown）<textarea name="content" rows="10" required placeholder="# 标题"></textarea></label>
+      <label>正文（支持 Markdown，可直接粘贴图片）
+        <textarea id="page-content" name="content" rows="10" required placeholder="# 标题&#10;正文… 截图或复制图片后 Ctrl+V 粘贴"></textarea>
+      </label>
       <div class="dialog-actions">
         <button type="button" class="btn-ghost" data-close>取消</button>
         <button type="submit" class="btn-primary">创建并上传</button>
