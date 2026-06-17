@@ -19,15 +19,7 @@
       "emoji": "💼",
       "desc": "技能积累与职业规划",
       "search": "职业 工作 职场",
-      "children": [
-        {
-          "type": "page",
-          "title": "简历与面试要点",
-          "slug": "resume-notes",
-          "date": "2026-06-16",
-          "search": "简历 面试 求职"
-        }
-      ]
+      "children": []
     }
   }
 }
