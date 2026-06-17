@@ -19,7 +19,15 @@
       "emoji": "💼",
       "desc": "技能积累与职业规划",
       "search": "职业 工作 职场",
-      "children": []
+      "children": [
+        {
+          "type": "file",
+          "title": "ubuntu系统装windows系统-双",
+          "filename": "ubuntu系统装windows系统-双.pdf",
+          "date": "2026-06-17",
+          "search": "ubuntu系统装windows系统-双 pdf"
+        }
+      ]
     }
   }
 }
