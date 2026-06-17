@@ -7,13 +7,6 @@
       "search": "生活 日常 习惯",
       "children": [
         {
-          "type": "page",
-          "title": "21321",
-          "slug": "21321",
-          "date": "2026-06-17",
-          "search": "21321"
-        },
-        {
           "type": "folder",
           "name": "111",
           "slug": "111",
